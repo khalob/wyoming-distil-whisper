@@ -21,10 +21,11 @@ async def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--model",
-        required=True,
-        type=str,
-        help="Name of faster-whisper model to use",
+        "--model", required=True, type=str, help="Name of faster-whisper model to use"
+    )
+    parser.add_argument(
+        "--hugging-face", action="store_true", help="Use HuggingFace model instead",
+        default=False
     )
     parser.add_argument("--uri", required=True, help="unix:// or tcp://")
     parser.add_argument(
@@ -38,36 +39,28 @@ async def main() -> None:
         help="Directory to download models into (default: first data dir)",
     )
     parser.add_argument(
-        "--device",
-        default="cpu",
-        help="Device to use for inference (default: cpu)",
+        "--device", default="cpu", help="Device to use for inference (default: cpu)"
     )
+    parser.add_argument("--language", help="Default language to set for transcription")
     parser.add_argument(
-        "--language",
-        help="Default language to set for transcription",
+        "--compute-type", default="default", help="Compute type (float16, int8, etc.)"
     )
-    parser.add_argument(
-        "--compute-type",
-        default="default",
-        help="Compute type (float16, int8, etc.)",
-    )
-    parser.add_argument(
-        "--beam-size",
-        type=int,
-        default=5,
-    )
+    parser.add_argument("--beam-size", type=int, default=5)
     parser.add_argument("--debug", action="store_true", help="Log DEBUG messages")
     args = parser.parse_args()
 
     if not args.download_dir:
-        # Download to first data dir by default
         args.download_dir = args.data_dir[0]
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     _LOGGER.debug(args)
 
-    # Look for model
-    try:
+    if args.hugging_face:
+        _LOGGER.debug("Using HuggingFace model %s", args.model)
+        whisper_model = HuggingFaceModel(
+            str(args.model), device=args.device, compute_type=args.compute_type
+        )
+    else:
         model = FasterWhisperModel(args.model)
         model_dir: Optional[Path] = None
         for data_dir in args.data_dir:
@@ -80,28 +73,11 @@ async def main() -> None:
             model_dir = download_model(model, args.download_dir)
 
         if args.language == "auto":
-            # Whisper does not understand "auto"
             args.language = None
 
-        # Load converted faster-whisper model
         _LOGGER.debug("Loading %s", args.model)
         whisper_model = WhisperModel(
-            str(model_dir),
-            device=args.device,
-            compute_type=args.compute_type,
-        )
-    except ValueError as e:
-        _LOGGER.info("Loading %s from HuggingFace", args.model)
-
-        class _Dummy:
-            def __init__(self, value):
-                self.value = value
-
-        model = _Dummy(args.model)
-        whisper_model = HuggingFaceModel(
-            str(args.model),
-            device=args.device,
-            compute_type=args.compute_type,
+            str(model_dir), device=args.device, compute_type=args.compute_type
         )
 
     wyoming_info = Info(
@@ -119,8 +95,7 @@ async def main() -> None:
                         name=model.value,
                         description=model.value,
                         attribution=Attribution(
-                            name="rhasspy",
-                            url="https://github.com/rhasspy/models/",
+                            name="rhasspy", url="https://github.com/rhasspy/models/"
                         ),
                         installed=True,
                         languages=WHISPER_LANGUAGES,
@@ -135,16 +110,10 @@ async def main() -> None:
     model_lock = asyncio.Lock()
     await server.run(
         partial(
-            FasterWhisperEventHandler,
-            wyoming_info,
-            args,
-            whisper_model,
-            model_lock,
+            FasterWhisperEventHandler, wyoming_info, args, whisper_model, model_lock
         )
     )
 
-
-# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     try:

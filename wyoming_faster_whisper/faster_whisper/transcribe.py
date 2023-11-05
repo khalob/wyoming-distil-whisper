@@ -1,4 +1,5 @@
 import collections
+import json
 import os
 import zlib
 from typing import Generator, Protocol, Tuple
@@ -6,6 +7,7 @@ from typing import Generator, Protocol, Tuple
 import ctranslate2
 import numpy as np
 import tokenizers
+from pathlib import Path
 
 from .feature_extractor import FeatureExtractor
 
@@ -118,17 +120,23 @@ class WhisperModel(ASRModel):
         self.feature_extractor = FeatureExtractor()
         self.decoder = tokenizers.decoders.ByteLevel()
 
-        with open(os.path.join(model_path, "vocabulary.txt")) as vocab_file:
-            self.ids_to_tokens = [line.rstrip("\n") for line in vocab_file]
-            self.tokens_to_ids = {
-                token: i for i, token in enumerate(self.ids_to_tokens)
-            }
+        if (Path(model_path)/ "vocabulary.txt").exists():
+            with open(os.path.join(model_path, "vocabulary.txt")) as vocab_file:
+                self.ids_to_tokens = [line.rstrip("\n") for line in vocab_file]
+                self.tokens_to_ids = {
+                    token: i for i, token in enumerate(self.ids_to_tokens)
+                }
+        else:
+            with open(os.path.join(model_path, "vocabulary.json")) as vocab_file:
+                self.ids_to_tokens = json.loads(vocab_file.read())
+                self.tokens_to_ids = {token: i for i, token in enumerate(self.ids_to_tokens)}
 
-        self.eot_id = self.tokens_to_ids["<|endoftext|>"]
-        self.timestamp_begin_id = self.tokens_to_ids["<|notimestamps|>"] + 1
+        self.eot_id = 50000 #self.tokens_to_ids[""] # what? this just doesn't exist in vocab.json
+        self.timestamp_begin_id = self.eot_id + 1
         self.input_stride = 2
         self.time_precision = 0.02
         self.max_length = 448
+
 
     def transcribe(
         self,

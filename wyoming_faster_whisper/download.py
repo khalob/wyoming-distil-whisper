@@ -25,6 +25,10 @@ class FasterWhisperModel(str, Enum):
     SMALL_INT8 = "small-int8"
     MEDIUM = "medium"
     MEDIUM_INT8 = "medium-int8"
+    # DISTIL_MED_EN = "https://huggingface.co/tovera/wis-distil-whisper-medium.en"
+    # DISTIL_LARGE = "https://huggingface.co/tovera/wis-distil-whisper-large-v2"
+    DISTIL_MED_EN = "distil-medium.en"
+    DISTIL_LARGE = "distil-large-v2"
 
 
 EXPECTED_HASHES = {
@@ -77,6 +81,11 @@ def download_model(model: FasterWhisperModel, dest_dir: Union[str, Path]) -> Pat
 
     Returns directory of downloaded model.
     """
+    if (
+        model == FasterWhisperModel.DISTIL_MED_EN
+        or model == FasterWhisperModel.DISTIL_LARGE
+    ):
+        return Path(dest_dir)
     dest_dir = Path(dest_dir)
     model_dir = dest_dir / model.value
 
@@ -96,9 +105,14 @@ def download_model(model: FasterWhisperModel, dest_dir: Union[str, Path]) -> Pat
 
 def find_model(model: FasterWhisperModel, dest_dir: Union[str, Path]) -> Optional[Path]:
     """Returns model directory if model exists."""
+
+    if (
+        model == FasterWhisperModel.DISTIL_MED_EN
+        or model == FasterWhisperModel.DISTIL_LARGE
+    ):
+        return Path(dest_dir)
     dest_dir = Path(dest_dir)
     model_dir = dest_dir / model.value
-
     expected_hash = EXPECTED_HASHES.get(model)
     if expected_hash is None:
         # No expected hash, fall back to checking for a non-empty model.bin file
