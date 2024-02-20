@@ -27,6 +27,7 @@ class FasterWhisperModel(str, Enum):
     MEDIUM_INT8 = "medium-int8"
     # DISTIL_MED_EN = "https://huggingface.co/tovera/wis-distil-whisper-medium.en"
     # DISTIL_LARGE = "https://huggingface.co/tovera/wis-distil-whisper-large-v2"
+    DISTIL_SMALL_EN = "distil-small.en"
     DISTIL_MED_EN = "distil-medium.en"
     DISTIL_LARGE = "distil-large-v2"
 
