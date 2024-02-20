@@ -29,7 +29,7 @@ WORKDIR /
 
 
 COPY script/run.sh /run.sh
-COPY ./models/faster-distil-whisper-small.en ./models/faster-distil-whisper-small.en
+# COPY ./models/faster-distil-whisper-small.en ./models/faster-distil-whisper-small.en
 
 EXPOSE 10300
 
