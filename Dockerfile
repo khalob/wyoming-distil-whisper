@@ -1,5 +1,5 @@
-# FROM debian:bullseye-slim
-FROM ghcr.io/home-assistant/amd64-base-debian:bookworm
+FROM debian:bullseye-slim
+# FROM ghcr.io/home-assistant/amd64-base-debian:bookworm
 
 # Install Whisper
 WORKDIR /usr/src
